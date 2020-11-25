@@ -110,9 +110,9 @@ cout << "year 201" << year << " q2Bin" << q2Bin << " binnum" << binnum << "parit
   t_num->SetBranchAddress( "tagB0"    , &tagB0     );
 
   // event number for even/odd splitting
-  double eventN_Dou;
+  //double eventN_Dou;
   Long64_t eventN;
-  t_gen->SetBranchAddress( "eventN", &eventN_Dou );
+  t_gen->SetBranchAddress( "eventN", &eventN     );
   t_den->SetBranchAddress( "eventN", &eventN     );
   t_num->SetBranchAddress( "eventN", &eventN     );
 
@@ -303,7 +303,7 @@ cout << "year 201" << year << " q2Bin" << q2Bin << " binnum" << binnum << "parit
     // find q2 bin of current candidate
     if ( ( genDimuMass2 < binBorders[q2Bin+1] ) &&
       ( genDimuMass2 > binBorders[q2Bin]) &&
-      ( int(eventN_Dou)%2==parity)) {
+      ( eventN%2==parity)) {
       if ( genSignHasFSR<0.5 ) {
         f[0][0]->Fill(f_1s);
         f[1][0]->Fill(M_6s);
