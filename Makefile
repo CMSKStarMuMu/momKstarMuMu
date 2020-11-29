@@ -12,7 +12,7 @@ CXXFLAGS      := $(DEBUG) -ansi -Wall -Wextra -m64 -O3 -std=c++11
 EXECUTABLE    := Moment
 
 ROOTFLAGS     := $(shell root-config --glibs)
-ROOFITFLAGS   := $(shell root-config --cflags --libs) -lRooFit -lRooFitCore
+ROOFITFLAGS1  := $(shell root-config --cflags --libs) -lMinuit -lRooFit -lRooFitCore -lFoam
 
 Moment : $(EXECUTABLE).cc
 	$(CXX) $(CXXFLAG) -o $@  $(ROOTFLAGS) $(ROOFITFLAGS1) -D"ROOFIT" $@.cc

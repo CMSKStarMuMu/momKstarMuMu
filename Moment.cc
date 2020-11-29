@@ -27,6 +27,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <vector>
+#include <tuple>
 
 using std::cout;
 using std::endl;
@@ -83,6 +84,7 @@ double P5p = 0.;
 double P6p = 0.;
 double P8p = 0.;
 
+string paralist[15] = {"FlS", "AFBS", "S3S", "S4S", "S5S", "S7S", "S8S", "S9S", "P1S", "P2S", "P3S", "P4pS", "P5pS", "P6pS", "P8pS"};
 //int bins = 100;
 
 
@@ -120,10 +122,13 @@ TBranch *b_eventN;
 double genSignHasFSR;
 TBranch *b_genSignHasFSR;
 
+double weight;
+
 double PDGB0Mass = 5.27958;
 double PDGJpsiMass = 3.096916;
 double PDGPsiPrimeMass = 3.686109;
 
+stringstream myString;
 
 // ################
 // # gen-Level MC #
@@ -298,31 +303,13 @@ void CalValue(string Paratype, TH1D *f1s, TH1D *m6s, TH1D *m6c, TH1D *f3, TH1D *
 	cout << "\n[Moment::GenCalValue]\t q2bin = " << q2Bin << ":" << Paratype << " = " << value << "+/- " << error  << endl;
 }
 
-
-
-
-
-void GenCalValue(int q2Bin, double q2Min, double q2Max) 
-{
-	value = 0.0;
-	error= 0.0;
-	M_6s = 0.;
-	M_6c = 0.;
-	f_1s = 0.;
-	f_3 = 0.;
-	f_4 = 0.;
-	f_5 = 0.;
-	f_6s = 0.;
-	f_6c = 0.;
-	f_7 = 0.;
-	f_8 = 0.;
-	f_9 = 0.;
-	//int bins = 200;
-	stringstream myString;
+// the code used to constrct histo from efficiency 
+tuple<TH1D*,TH1D*,TH1D*,TH1D*,TH1D*,TH1D*,TH1D*,TH1D*,TH1D*> Constructhisto(int q2Bin){
+   	stringstream myString;
 	myString.clear();
 	myString.str("");
 	myString << "/afs/cern.ch/user/x/xuqin/work/B0KstMuMu/moment/1Deff/momentfinal/effnewphi/1Deffb" << q2Bin << "y6_ev.root" ;
-	//any year is okay as we only need the binning results
+	//any year any parity is okay as we only need the binning results
 	cout << "\n[Moment::ReCalValue]\tTry to open " << myString.str().c_str() << endl;
 	TFile *efffile = new TFile(myString.str().c_str(), "READ");
 	if (efffile!=0){
@@ -355,6 +342,7 @@ void GenCalValue(int q2Bin, double q2Min, double q2Max)
 		//    cout << xbins[i] << endl;
 	}
 
+
 	TH1D *f1s = new TH1D("f1s","",bins,xbinsf1s);
 	TH1D *m6s = new TH1D("m6s","",bins,xbinsm6s);
 	TH1D *m6c = new TH1D("m6c","",bins,xbinsm6c);
@@ -363,44 +351,91 @@ void GenCalValue(int q2Bin, double q2Min, double q2Max)
 	TH1D *f5 = new TH1D("f5","",bins,xbinsf5);
 	TH1D *f7 = new TH1D("f7","",bins,xbinsf7);
 	TH1D *f8 = new TH1D("f8","",bins,xbinsf8);
-	TH1D *f9 = new TH1D("f9","",bins,xbinsf9);
+	TH1D *f9 = new TH1D("f9","",bins,xbinsf9); 
+    return make_tuple(f1s,m6s,m6c,f3,f4,f5,f7,f8,f9);
+}
 
-	/* 	TH1D *f1s = new TH1D("f1s", "f1s", bins, 0.0, 1.0);
-			TH1D *m6s = new TH1D("m6s", "m6s", bins, -1.0, 1.0);
-			TH1D *m6c = new TH1D("m6c", "m6c", bins, -1.0, 1.0);
-			TH1D *f3 = new TH1D("f3", "f3", bins, -1.0, 1.0);
-			TH1D *f4 = new TH1D("f4", "f4", bins, -1.0, 1.0);
-			TH1D *f5 = new TH1D("f5", "f5", bins, -1.0, 1.0);
-			TH1D *f7 = new TH1D("f7", "f7", bins, -1.0, 1.0);
-			TH1D *f8 = new TH1D("f8", "f8", bins, -1.0, 1.0);
-			TH1D *f9 = new TH1D("f9", "f9", bins, -1.0, 1.0); */
-	// ############################
-	// # Read tree and set Branch #
-	// ############################
-	//TFile *f = new TFile("/afs/cern.ch/user/l/llinwei/work2/qinxl/data/2016/skims/GEN/gen_B0_miniaodWithoutGenCuts.root");
-	//TFile *f = new TFile("/afs/cern.ch/user/x/xuqin/data/2016/skims/GEN_NoFilter/GEN_BFilter_B0MuMuKstar_p*.root");
-	//cout << "\n[Moment::GenCalValue]\tTry to open\t" << "GEN_BFilter_B0MuMuKstar_p*.root" << endl;
-	//cout << "\n[Moment::GenCalValue]\tTry to open\t" << "gen_B0_miniaodWithoutGenCuts.root" << endl;
+void GenCalValue(int q2Bin, double q2Min, double q2Max) 
+{
+	value = 0.0;
+	error= 0.0;
+	M_6s = 0.;
+	M_6c = 0.;
+	f_1s = 0.;
+	f_3 = 0.;
+	f_4 = 0.;
+	f_5 = 0.;
+	f_6s = 0.;
+	f_6c = 0.;
+	f_7 = 0.;
+	f_8 = 0.;
+	f_9 = 0.;
 
-	//TTree *t = (TTree *) f->Get("ntuple");
-	TChain *t = new TChain();
-	t->Add("/afs/cern.ch/user/x/xuqin/data/2016/skims/GEN_NoFilter/newphi/GEN_BFilter_B0MuMuKstar_p*.root/ntuple");
-	t->SetBranchAddress("cos_theta_k", &cos_theta_k, &b_cos_theta_k);
-	t->SetBranchAddress("cos_theta_l", &cos_theta_l, &b_cos_theta_l);
-	t->SetBranchAddress("phi_kst_mumu", &phi_kst_mumu, &b_phi_kst_mumu);
-	t->SetBranchAddress("genQ", &genQ, &b_genQ);
-	t->SetBranchAddress("genSignHasFSR",&genSignHasFSR,&b_genSignHasFSR);
-	Int_t entries = (Int_t) t->GetEntries();
-	cout << "\n[Moment::GenCalValue]\tTotal number of events in the tree: " << entries << " @@@" << endl;
-	for (Int_t i = 0; i < entries; i++)
-	{
-		t->GetEntry(i);
-		mumuMass2 = genQ * genQ;
+    auto histo = Constructhisto(q2Bin);
+	TH1D *f1s = get<0>(histo);
+	TH1D *m6s = get<1>(histo);
+	TH1D *m6c = get<2>(histo);
+	TH1D *f3 = get<3>(histo);
+	TH1D *f4 = get<4>(histo);
+	TH1D *f5 = get<5>(histo);
+	TH1D *f7 = get<6>(histo);
+	TH1D *f8 = get<7>(histo);
+	TH1D *f9 = get<8>(histo);
 
-		// ###############################
-		// # define orthogonal functions #
-		// ###############################
-		f_1s = 1 - cos_theta_k * cos_theta_k;
+    string dataSetstring = "data_genDen";
+    string dataSetstringodd = dataSetstring + Form("_od_b%i",q2Bin);
+    string dataSetstringeven = dataSetstring + Form("_ev_b%i",q2Bin);
+
+    // Load variables and dataset
+    string filename = Form("effDataset_b%i_%i.root",q2Bin,2016);
+    //any year is okay as they are the same for gen_nofilter sample
+    TFile* fin = TFile::Open( filename.c_str() );
+    if ( !fin || !fin->IsOpen() ) {
+        cout<<"File not found: "<<filename<<endl;
+        return;
+    }
+    RooWorkspace* wspodd = (RooWorkspace*)fin->Get(Form("ws_b%ip%i",q2Bin,1));
+    if ( !wspodd || wspodd->IsZombie() ) {
+        cout<<"Odd Workspace not found in file: "<<filename<<endl;
+        return;
+    }
+    RooWorkspace* wspeven = (RooWorkspace*)fin->Get(Form("ws_b%ip%i",q2Bin,0));
+    if ( !wspeven || wspeven->IsZombie() ) {
+        cout<<"Even Workspace not found in file: "<<filename<<endl;
+        return;
+    }
+
+    RooRealVar* ctK = wspodd->var("ctK");
+    RooRealVar* ctL = wspodd->var("ctL");
+    RooRealVar* phi = wspodd->var("phi");
+    if ( !ctK || !ctL || !phi || ctK->IsZombie() || ctL->IsZombie() || phi->IsZombie() ) {
+        cout<<"Variables not found in file: "<<filename<<endl;
+        return;
+    }
+
+    RooDataSet* totdata = (RooDataSet*)wspodd->data(dataSetstringodd.c_str());
+    if ( !totdata || totdata->IsZombie() ) {
+        cout<<"Dataset "<<dataSetstringodd<<" not found in file: "<<filename<<endl;
+        return;
+    }
+    cout << "total entries in odd data is " << totdata->numEntries() << endl;
+    RooDataSet* totdata1 = (RooDataSet*)wspeven->data(dataSetstringeven.c_str());
+    if ( !totdata1 || totdata1->IsZombie() ) {
+        cout<<"Dataset "<<dataSetstringeven<<" not found in file: "<<filename<<endl;
+        return;
+    }
+    cout << "total entries in even data is " << totdata1->numEntries() << endl;
+    //merge odd and even data
+    totdata->append(*totdata1);
+    int totentries = totdata->numEntries();
+    cout << "total entries in total data is " << totentries << endl;
+
+
+    for (int i=0;i<totentries;i++){
+        cos_theta_k = totdata->get(i)->getRealValue("ctK");
+        cos_theta_l = totdata->get(i)->getRealValue("ctL");
+        phi_kst_mumu = totdata->get(i)->getRealValue("phi");
+        f_1s = 1 - cos_theta_k * cos_theta_k;
 		M_6s = (1 - cos_theta_k * cos_theta_k) * cos_theta_l;
 		M_6c = cos_theta_k * cos_theta_k * cos_theta_l;
 		f_3 = (1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l) * TMath::Cos(2 * phi_kst_mumu);
@@ -409,31 +444,22 @@ void GenCalValue(int q2Bin, double q2Min, double q2Max)
 		f_7 = 2 * cos_theta_k * TMath::Sin(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
 		f_8 = 4 * cos_theta_k * cos_theta_l * TMath::Sin(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
 		f_9 = (1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l) * TMath::Sin(2 * phi_kst_mumu);
-		// ##################################
-		// # begin to compute the variables #
-		// ##################################
-		if (genSignHasFSR<0.5 ){
-			if (mumuMass2 > q2Min && mumuMass2 < q2Max) 
-			{
-				f1s->Fill(f_1s);
-				m6s->Fill(M_6s);
-				m6c->Fill(M_6c);
-				f3->Fill(f_3);
-				f4->Fill(f_4);
-				f5->Fill(f_5);
-				f7->Fill(f_7);
-				f8->Fill(f_8);
-				f9->Fill(f_9);       
-			}
-		}
-	} // end for 
-	string paralist[15] = {"FlS", "AFBS", "S3S", "S4S", "S5S", "S7S", "S8S", "S9S", "P1S", "P2S", "P3S", "P4pS", "P5pS", "P6pS", "P8pS"};
-	for (int i =0;i<15;i++){
+
+        f1s->Fill(f_1s);
+        m6s->Fill(M_6s);
+        m6c->Fill(M_6c);
+        f3->Fill(f_3);
+        f4->Fill(f_4);
+        f5->Fill(f_5);
+        f7->Fill(f_7);
+        f8->Fill(f_8);
+        f9->Fill(f_9);  
+    }
+
+    for (int i =0;i<15;i++){
 		string Paratype = paralist[i];
 		CalValue(Paratype,f1s,m6s,m6c,f3,f4,f5,f7,f8,f9);
 	}
-
-
 }
 
 void ReCalValue(int q2Bin, double q2Min, double q2Max, string TagType, int parity) {
@@ -454,68 +480,24 @@ void ReCalValue(int q2Bin, double q2Min, double q2Max, string TagType, int parit
 	f_6c = 0.;
 	f_7 = 0.;
 	f_8 = 0.;
-	f_9 = 0.;
+    f_9 = 0.;
+    auto histo = Constructhisto(q2Bin);
+	TH1D *f1s = get<0>(histo);
+	TH1D *m6s = get<1>(histo);
+	TH1D *m6c = get<2>(histo);
+	TH1D *f3 = get<3>(histo);
+	TH1D *f4 = get<4>(histo);
+	TH1D *f5 = get<5>(histo);
+	TH1D *f7 = get<6>(histo);
+	TH1D *f8 = get<7>(histo);
+	TH1D *f9 = get<8>(histo);
 
-	// ############################
-	// # determine binning #
-	// ############################
-	stringstream myString;
-	myString.clear();
-	myString.str("");
-	myString << "/afs/cern.ch/user/x/xuqin/work/B0KstMuMu/moment/1Deff/momentfinal/effnewphi/1Deffb" << q2Bin << "y6_" << (parity==0? "od":"ev") << ".root" ;
-	cout << "\n[Moment::ReCalValue]\tTry to open" << myString.str().c_str() << endl;
-	cout << "\n[Moment::ReCalValue]\tTry to make adaptive binning histogram" << endl;
-	TFile *hisfile = new TFile(myString.str().c_str(), "READ");
-	if (hisfile!=0){
-		cout<< "file is existed" << endl;
-	}
-
-
-	TH1D *f1shisW = (TH1D*)hisfile->Get("f1sWTeff");
-	TH1D *m6shisW = (TH1D*)hisfile->Get("m6sWTeff");
-	TH1D *m6chisW = (TH1D*)hisfile->Get("m6cWTeff");
-	TH1D *f3hisW = (TH1D*)hisfile->Get("f3WTeff");
-	TH1D *f4hisW = (TH1D*)hisfile->Get("f4WTeff");
-	TH1D *f5hisW = (TH1D*)hisfile->Get("f5WTeff");
-	TH1D *f7hisW = (TH1D*)hisfile->Get("f7WTeff");
-	TH1D *f8hisW = (TH1D*)hisfile->Get("f8WTeff");
-	TH1D *f9hisW = (TH1D*)hisfile->Get("f9WTeff");
-
-	int bins = f1shisW->GetNbinsX();
-	//TAxis *axis = m6seffW->GetXaxis();
-	double xbinsf1s[bins+1], xbinsm6s[bins+1], xbinsm6c[bins+1], xbinsf3[bins+1], xbinsf4[bins+1], xbinsf5[bins+1], xbinsf7[bins+1], xbinsf8[bins+1], xbinsf9[bins+1];
-	for (int i=0;i<=bins;i++){
-		xbinsf1s[i] = f1shisW->GetBinLowEdge(i+1);
-		xbinsm6s[i] = m6shisW->GetBinLowEdge(i+1);
-		xbinsm6c[i] = m6chisW->GetBinLowEdge(i+1);
-		xbinsf3[i] = f3hisW->GetBinLowEdge(i+1);
-		xbinsf4[i] = f4hisW->GetBinLowEdge(i+1);
-		xbinsf5[i] = f5hisW->GetBinLowEdge(i+1);
-		xbinsf7[i] = f7hisW->GetBinLowEdge(i+1);
-		xbinsf8[i] = f8hisW->GetBinLowEdge(i+1);
-		xbinsf9[i] = f9hisW->GetBinLowEdge(i+1);
-		//    cout << xbins[i] << endl;
-	}
-
-	TH1D *f1s = new TH1D("f1s","",bins,xbinsf1s);
-	TH1D *m6s = new TH1D("m6s","",bins,xbinsm6s);
-	TH1D *m6c = new TH1D("m6c","",bins,xbinsm6c);
-	TH1D *f3 = new TH1D("f3","",bins,xbinsf3);
-	TH1D *f4 = new TH1D("f4","",bins,xbinsf4);
-	TH1D *f5 = new TH1D("f5","",bins,xbinsf5);
-	TH1D *f7 = new TH1D("f7","",bins,xbinsf7);
-	TH1D *f8 = new TH1D("f8","",bins,xbinsf8);
-	TH1D *f9 = new TH1D("f9","",bins,xbinsf9);
-
-	int entries1 = 0;
-	int entries2 = 0;
-	int totentries = 0; 
-	for (int year=6;year<9;year++){
-		// ############################
+    for (int year=6;year<9;year++){
+        // ############################
 		// # Read Effcicency Function #
 		// ############################
 		cout << "\n[Moment::ReCalValue]\tTry to fill year" << year << "reco mc sample" << endl; 
-		myString.clear();
+        myString.clear();
 		myString.str("");
 		//myString << "/afs/cern.ch/user/x/xuqin/work/B0KstMuMu/moment/1Deff/momentfinal/eff/1Deffb" << q2Bin << "y"<< year <<".root" ;
 		myString << "/afs/cern.ch/user/x/xuqin/work/B0KstMuMu/moment/1Deff/momentfinal/effnewphi/1Deffb" << q2Bin << "y" << year << "_" << (parity==0? "od":"ev") << ".root" ;
@@ -595,384 +577,384 @@ void ReCalValue(int q2Bin, double q2Min, double q2Max, string TagType, int parit
 		RooAbsReal* effWf8 = new RooHistFunc("effWf8","effWf8",f8e,*f8WData,1);
 		RooAbsReal* effWf9 = new RooHistFunc("effWf9","effWf9",f9e,*f9WData,1);
 
-		// ##################
-		// # Read Data & MC #
-		// ##################
-		cout << "\n[Moment::CalValue]\t @@@ Making datasets @@@ " << endl;
-		TChain *t = new TChain();
-		if (year==6) {
-			t->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_LMNR.root/ntuple");
-		}
-		else if (year==7){
-			t->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_LMNR.root/ntuple");
-		}
-		else if (year==8){
-			t->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_LMNR.root/ntuple");
-		}
-
-		t->SetBranchAddress("cos_theta_k", &cos_theta_k, &b_cos_theta_k);
-		t->SetBranchAddress("cos_theta_l", &cos_theta_l, &b_cos_theta_l);
-		t->SetBranchAddress("phi_kst_mumu", &phi_kst_mumu, &b_phi_kst_mumu);
-		t->SetBranchAddress("mumuMass", &mumuMass, &b_mumuMass);
-		t->SetBranchAddress("tagB0", &tagB0, &b_tagB0);
-		t->SetBranchAddress("genSignal", &genSignal, &b_genSignal);
-		t->SetBranchAddress( "tagged_mass", &recoB0Mass ,&b_recoB0Mass);
-		t->SetBranchAddress( "eventN", &eventN, &b_eventN);
-
-		Int_t entries = (Int_t) t->GetEntries();
-		cout << "\n[Moment::CalValue]\tTotal number of events in the tree: " << entries << " @@@" << endl;
-		double wightf1s,wightm6s,wightm6c,wightf3,wightf4,wightf5,wightf7,wightf8,wightf9;
+        double wightf1s,wightm6s,wightm6c,wightf3,wightf4,wightf5,wightf7,wightf8,wightf9;
 		double wight1f1s,wight1m6s,wight1m6c,wight1f3,wight1f4,wight1f5,wight1f7,wight1f8,wight1f9;
 		double wight2f1s,wight2m6s,wight2m6c,wight2f3,wight2f4,wight2f5,wight2f7,wight2f8,wight2f9;
-
-		for (Int_t i = 0; i < entries; i++) {
-
-			totentries = totentries+1;
-			t->GetEntry(i);
-			if ( mumuMass < PDGJpsiMass ) { // below Jpsi
-				if ( fabs( recoB0Mass - PDGB0Mass - mumuMass + PDGJpsiMass ) < 0.18 ) continue;
-			} else if ( mumuMass > PDGPsiPrimeMass ) { // above PsiPrime
-				if ( fabs( recoB0Mass - PDGB0Mass - mumuMass + PDGPsiPrimeMass ) < 0.08 ) continue;
-			} else { // between the resonances
-				if ( fabs( recoB0Mass - PDGB0Mass - mumuMass + PDGJpsiMass ) < 0.08 ) continue;
-				if ( fabs( recoB0Mass - PDGB0Mass - mumuMass + PDGPsiPrimeMass ) < 0.09 ) continue;
-			}  
-
-			mumuMass2 = mumuMass*mumuMass;
-			if (TagType == "good") {
-				if (((tagB0 ==1 && genSignal ==1) || (tagB0 ==0 && genSignal ==2))&&(mumuMass2>q2Min) && (mumuMass2<q2Max) && (eventN%2==parity)){
+        
+        string dataSetstringCT = "data_ctRECO";
+        string dataSetstringWT = "data_wtRECO";
+        dataSetstringCT = dataSetstringCT + Form((parity==0?"_ev_b%i":"_od_b%i"),q2Bin);
+        dataSetstringWT = dataSetstringWT + Form((parity==0?"_ev_b%i":"_od_b%i"),q2Bin);
 
 
-					// ###############################
-					// # define orthogonal functions #
-					// ###############################
-					f_1s = 1 - cos_theta_k * cos_theta_k;
-					M_6s = (1 - cos_theta_k * cos_theta_k) * cos_theta_l;
-					M_6c = cos_theta_k * cos_theta_k * cos_theta_l;
-					f_3 = (1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l) * TMath::Cos(2 * phi_kst_mumu);
-					f_4 = 4 * cos_theta_k * cos_theta_l * TMath::Cos(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
-					f_5 = 2 * cos_theta_k * TMath::Cos(phi_kst_mumu)* TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
-					f_7 = 2 * cos_theta_k * TMath::Sin(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
-					f_8 = 4 * cos_theta_k * cos_theta_l * TMath::Sin(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
-					f_9 = (1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l) * TMath::Sin(2 * phi_kst_mumu);
+        // Load variables and dataset
+        string filename = Form("effDataset_b%i_%i.root",q2Bin,year);
+        TFile* fin = TFile::Open( filename.c_str() );
+        if ( !fin || !fin->IsOpen() ) {
+            cout<<"File not found: "<<filename<<endl;
+            return;
+        }
+        RooWorkspace* wsp = (RooWorkspace*)fin->Get(Form("ws_b%ip%i",q2Bin,parity));
+        if ( !wsp || wsp->IsZombie() ) {
+            cout<<"Workspace not found in file: "<<filename<<endl;
+        return;
+        }
+        RooRealVar* ctK = wsp->var("ctK");
+        RooRealVar* ctL = wsp->var("ctL");
+        RooRealVar* phi = wsp->var("phi");
+        if ( !ctK || !ctL || !phi || ctK->IsZombie() || ctL->IsZombie() || phi->IsZombie() ) {
+            cout<<"Variables not found in file: "<<filename<<endl;
+            return;
+        }
+
+        if  (TagType == "good") {
+            RooDataSet* totdata = (RooDataSet*)wsp->data(dataSetstringCT.c_str());
+            if ( !totdata || totdata->IsZombie() ) {
+                cout<<"Dataset "<<dataSetstringCT<<" not found in file: "<<filename<<endl;
+                return;
+            }
+            int totentries = totdata->numEntries();
+            cout << "total entries in total data is " << totentries << endl;
+            for (int i=0;i<totentries;i++){
+                cos_theta_k = totdata->get(i)->getRealValue("ctK");
+                cos_theta_l = totdata->get(i)->getRealValue("ctL");
+                phi_kst_mumu = totdata->get(i)->getRealValue("phi");
+                weight = totdata->weight();
+                f_1s = 1 - cos_theta_k * cos_theta_k;
+                M_6s = (1 - cos_theta_k * cos_theta_k) * cos_theta_l;
+                M_6c = cos_theta_k * cos_theta_k * cos_theta_l;
+                f_3 = (1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l) * TMath::Cos(2 * phi_kst_mumu);
+                f_4 = 4 * cos_theta_k * cos_theta_l * TMath::Cos(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
+                f_5 = 2 * cos_theta_k * TMath::Cos(phi_kst_mumu)* TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
+                f_7 = 2 * cos_theta_k * TMath::Sin(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
+                f_8 = 4 * cos_theta_k * cos_theta_l * TMath::Sin(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
+                f_9 = (1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l) * TMath::Sin(2 * phi_kst_mumu);
+
+                f1se.setVal(f_1s);
+                double efff1s = effCf1s->getValV();
+                m6se.setVal(M_6s);
+                double effm6s = effCm6s->getValV();
+                m6ce.setVal(M_6c);
+                double effm6c = effCm6c->getValV();
+                f3e.setVal(f_3);
+                double efff3 = effCf3->getValV();
+                f4e.setVal(f_4);
+                double efff4 = effCf4->getValV();
+                f5e.setVal(f_5);
+                double efff5 = effCf5->getValV();
+                f7e.setVal(f_7);
+                double efff7 = effCf7->getValV();
+                f8e.setVal(f_8);
+                double efff8 = effCf8->getValV();
+                f9e.setVal(f_9);
+                double efff9 = effCf9->getValV();
+                if (efff1s ==0)                                                                                                       
+                    wightf1s = 0;
+                else
+                    wightf1s = 1/efff1s;
+                if (effm6s ==0)
+                    wightm6s = 0;
+                else 
+                    wightm6s = 1/effm6s;
+                if (effm6c ==0)
+                    wightm6c = 0;
+                else 
+                    wightm6c = 1/effm6c;
+                if (efff3 ==0)
+                    wightf3 = 0;
+                else 
+                    wightf3 = 1/efff3;
+                if (efff4 ==0)
+                    wightf4 = 0;
+                else        
+                    wightf4 = 1/efff4;
+                if (efff5 ==0)
+                    wightf5 = 0;
+                else        
+                    wightf5 = 1/efff5;
+                if (efff7 ==0)
+                    wightf7 = 0;
+                else        
+                    wightf7 = 1/efff7;
+                if (efff8 ==0)
+                    wightf8 = 0;
+                else        
+                    wightf8 = 1/efff8;
+                if (efff9 ==0)
+                    wightf9 = 0;
+                else        
+                    wightf9 = 1/efff9;
+
+                f1s->Fill(f_1s, wightf1s*weight);
+                m6s->Fill(M_6s, wightm6s*weight);
+                m6c->Fill(M_6c, wightm6c*weight);
+                f3->Fill(f_3, wightf3*weight);
+                f4->Fill(f_4, wightf4*weight);
+                f5->Fill(f_5, wightf5*weight);
+                f7->Fill(f_7, wightf7*weight);
+                f8->Fill(f_8, wightf8*weight);
+                f9->Fill(f_9, wightf9*weight);
+            }
+        }
+
+        else if  (TagType == "mis") {
+            RooDataSet* totdata = (RooDataSet*)wsp->data(dataSetstringWT.c_str());
+            if ( !totdata || totdata->IsZombie() ) {
+                cout<<"Dataset "<<dataSetstringWT<<" not found in file: "<<filename<<endl;
+                return;
+            }
+            int totentries = totdata->numEntries();
+            cout << "total entries in total data is " << totentries << endl;
+            for (int i=0;i<totentries;i++){
+                cos_theta_k = totdata->get(i)->getRealValue("ctK");
+                cos_theta_l = totdata->get(i)->getRealValue("ctL");
+                phi_kst_mumu = totdata->get(i)->getRealValue("phi");
+                weight = totdata->weight();
+                f_1s = 1 - cos_theta_k * cos_theta_k;
+                M_6s = -(1 - cos_theta_k * cos_theta_k) * cos_theta_l;
+                M_6c = -cos_theta_k * cos_theta_k * cos_theta_l;
+                f_3 = (1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l) * TMath::Cos(2 * phi_kst_mumu);
+                f_4 = 4 * cos_theta_k * cos_theta_l * TMath::Cos(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
+                f_5 = -2 * cos_theta_k * TMath::Cos(phi_kst_mumu)* TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
+                f_7 = 2 * cos_theta_k * TMath::Sin(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
+                f_8 = -4 * cos_theta_k * cos_theta_l * TMath::Sin(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
+                f_9 = -(1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l) * TMath::Sin(2 * phi_kst_mumu);
+                f1se.setVal(f_1s);
+                double efff1s = effWf1s->getValV();
+                m6se.setVal(M_6s);
+                double effm6s = effWm6s->getValV();
+                m6ce.setVal(M_6c);
+                double effm6c = effWm6c->getValV();
+                f3e.setVal(f_3);
+                double efff3 = effWf3->getValV();
+                f4e.setVal(f_4);
+                double efff4 = effWf4->getValV();
+                f5e.setVal(f_5);
+                double efff5 = effWf5->getValV();
+                f7e.setVal(f_7);
+                double efff7 = effWf7->getValV();
+                f8e.setVal(f_8);
+                double efff8 = effWf8->getValV();
+                f9e.setVal(f_9);
+                double efff9 = effWf9->getValV();
+                if (efff1s ==0)                                                                                                       
+                    wightf1s = 0;
+                else
+                    wightf1s = 1/efff1s;
+                if (effm6s ==0)
+                    wightm6s = 0;
+                else 
+                    wightm6s = 1/effm6s;
+                if (effm6c ==0)
+                    wightm6c = 0;
+                else 
+                    wightm6c = 1/effm6c;
+                if (efff3 ==0)
+                    wightf3 = 0;
+                else 
+                    wightf3 = 1/efff3;
+                if (efff4 ==0)
+                    wightf4 = 0;
+                else        
+                    wightf4 = 1/efff4;
+                if (efff5 ==0)
+                    wightf5 = 0;
+                else        
+                    wightf5 = 1/efff5;
+                if (efff7 ==0)
+                    wightf7 = 0;
+                else        
+                    wightf7 = 1/efff7;
+                if (efff8 ==0)
+                    wightf8 = 0;
+                else        
+                    wightf8 = 1/efff8;
+                if (efff9 ==0)
+                    wightf9 = 0;
+                else        
+                    wightf9 = 1/efff9;
+
+                f1s->Fill(f_1s, wightf1s*weight);
+                m6s->Fill(M_6s, wightm6s*weight);
+                m6c->Fill(M_6c, wightm6c*weight);
+                f3->Fill(f_3, wightf3*weight);
+                f4->Fill(f_4, wightf4*weight);
+                f5->Fill(f_5, wightf5*weight);
+                f7->Fill(f_7, wightf7*weight);
+                f8->Fill(f_8, wightf8*weight);
+                f9->Fill(f_9, wightf9*weight);
+            }
+        }
+
+        else if (TagType == "mix"){
+            RooDataSet* totdata = (RooDataSet*)wsp->data(dataSetstringCT.c_str());
+            if ( !totdata || totdata->IsZombie() ) {
+                cout<<"Dataset "<<dataSetstringCT<<" not found in file: "<<filename<<endl;
+                return;
+            }
+            cout << "goodtag events number " << totdata->numEntries() << endl;
+            RooDataSet* totdata1 = (RooDataSet*)wsp->data(dataSetstringWT.c_str());
+            if ( !totdata1 || totdata1->IsZombie() ) {
+                cout<<"Dataset "<<dataSetstringWT<<" not found in file: "<<filename<<endl;
+                return;
+            }
+            cout << "mistag events number " << totdata->numEntries() << endl;
+            totdata->append(*totdata1);
+
+            int totentries = totdata->numEntries();
+            cout << "total entries in total data is " << totentries << endl;
+            for (int i=0;i<totentries;i++){
+                cos_theta_k = totdata->get(i)->getRealValue("ctK");
+                cos_theta_l = totdata->get(i)->getRealValue("ctL");
+                phi_kst_mumu = totdata->get(i)->getRealValue("phi");
+                weight = totdata->weight();            
+                f_1s = 1 - cos_theta_k * cos_theta_k;
+                M_6s = (1 - cos_theta_k * cos_theta_k) * cos_theta_l;
+                M_6c = cos_theta_k * cos_theta_k * cos_theta_l;
+                f_3 = (1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l) * TMath::Cos(2 * phi_kst_mumu);
+                f_4 = 4 * cos_theta_k * cos_theta_l * TMath::Cos(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
+                f_5 = 2 * cos_theta_k * TMath::Cos(phi_kst_mumu)* TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
+                f_7 = 2 * cos_theta_k * TMath::Sin(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
+                f_8 = 4 * cos_theta_k * cos_theta_l * TMath::Sin(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
+                f_9 = (1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l) * TMath::Sin(2 * phi_kst_mumu);	
+
+                f1se.setVal(f_1s);
+                double effc1f1s = effCf1s->getValV();
+                double effw1f1s = effWf1s->getValV();
+                m6se.setVal(M_6s);
+                double effc1m6s = effCm6s->getValV();
+                double effw1m6s = effWm6s->getValV();
+                m6ce.setVal(M_6c);
+                double effc1m6c = effCm6c->getValV();
+                double effw1m6c = effWm6c->getValV();
+                f3e.setVal(f_3);
+                double effc1f3 = effCf3->getValV();
+                double effw1f3 = effWf3->getValV();
+                f4e.setVal(f_4);
+                double effc1f4 = effCf4->getValV();
+                double effw1f4 = effWf4->getValV();
+                f5e.setVal(f_5);
+                double effc1f5 = effCf5->getValV();
+                double effw1f5 = effWf5->getValV();
+                f7e.setVal(f_7);
+                double effc1f7 = effCf7->getValV();
+                double effw1f7 = effWf7->getValV();
+                f8e.setVal(f_8);
+                double effc1f8 = effCf8->getValV();
+                double effw1f8 = effWf8->getValV();
+                f9e.setVal(f_9);
+                double effc1f9 = effCf9->getValV();
+                double effw1f9 = effWf9->getValV();
+
+                m6se.setVal(-M_6s);
+                double effc2m6s = effCm6s->getValV();
+                double effw2m6s = effWm6s->getValV();
+                m6ce.setVal(-M_6c);
+                double effc2m6c = effCm6c->getValV();
+                double effw2m6c = effWm6c->getValV();
+                f5e.setVal(-f_5);
+                double effc2f5 = effCf5->getValV();
+                double effw2f5 = effWf5->getValV();
+                f8e.setVal(-f_8);
+                double effc2f8 = effCf8->getValV();
+                double effw2f8 = effWf8->getValV();
+                f9e.setVal(-f_9);
+                double effc2f9 = effCf9->getValV();
+                double effw2f9 = effWf9->getValV();
 
 
-					f1se.setVal(f_1s);
-					double efff1s = effCf1s->getValV();
-					m6se.setVal(M_6s);
-					double effm6s = effCm6s->getValV();
-					m6ce.setVal(M_6c);
-					double effm6c = effCm6c->getValV();
-					f3e.setVal(f_3);
-					double efff3 = effCf3->getValV();
-					f4e.setVal(f_4);
-					double efff4 = effCf4->getValV();
-					f5e.setVal(f_5);
-					double efff5 = effCf5->getValV();
-					f7e.setVal(f_7);
-					double efff7 = effCf7->getValV();
-					f8e.setVal(f_8);
-					double efff8 = effCf8->getValV();
-					f9e.setVal(f_9);
-					double efff9 = effCf9->getValV();
-					if (efff1s ==0)                                                                                                       
-						wightf1s = 0;
-					else
-						wightf1s = 1/efff1s;
-					if (effm6s ==0)
-						wightm6s = 0;
-					else 
-						wightm6s = 1/effm6s;
-					if (effm6c ==0)
-						wightm6c = 0;
-					else 
-						wightm6c = 1/effm6c;
-					if (efff3 ==0)
-						wightf3 = 0;
-					else 
-						wightf3 = 1/efff3;
-					if (efff4 ==0)
-						wightf4 = 0;
-					else        
-						wightf4 = 1/efff4;
-					if (efff5 ==0)
-						wightf5 = 0;
-					else        
-						wightf5 = 1/efff5;
-					if (efff7 ==0)
-						wightf7 = 0;
-					else        
-						wightf7 = 1/efff7;
-					if (efff8 ==0)
-						wightf8 = 0;
-					else        
-						wightf8 = 1/efff8;
-					if (efff9 ==0)
-						wightf9 = 0;
-					else        
-						wightf9 = 1/efff9;
+                double efff1s = effc1f1s+effw1f1s;
+                double efff3 = effc1f3+effw1f3;
+                double efff4 = effc1f4+effw1f4;
+                double efff7 = effc1f7+effw1f7;
+                if (efff1s ==0)
+                    wightf1s = 0;
+                else
+                    wightf1s = 1/efff1s;
+                if (efff3 ==0)
+                    wightf3 = 0;
+                else 
+                    wightf3 = 1/efff3;
+                if (efff4 ==0)
+                    wightf4 = 0;
+                else    
+                    wightf4 = 1/efff4;
+                if (efff7 ==0)
+                    wightf7 = 0;
+                else    
+                    wightf7 = 1/efff7;
 
-					f1s->Fill(f_1s, wightf1s);
-					m6s->Fill(M_6s, wightm6s);
-					m6c->Fill(M_6c, wightm6c);
-					f3->Fill(f_3, wightf3);
-					f4->Fill(f_4, wightf4);
-					f5->Fill(f_5, wightf5);
-					f7->Fill(f_7, wightf7);
-					f8->Fill(f_8, wightf8);
-					f9->Fill(f_9, wightf9);
-					entries1 = entries1+1;
-				}
-				else
-					continue;
-			}
-
-			if (TagType == "mis") {
-				if (((tagB0 ==0 && genSignal ==1) || (tagB0 ==1 && genSignal ==2))&&(mumuMass2>q2Min) && (mumuMass2<q2Max) && (eventN%2==parity)){
-
-					f_1s = 1 - cos_theta_k * cos_theta_k;
-					M_6s = -(1 - cos_theta_k * cos_theta_k) * cos_theta_l;
-					M_6c = -cos_theta_k * cos_theta_k * cos_theta_l;
-					f_3 = (1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l) * TMath::Cos(2 * phi_kst_mumu);
-					f_4 = 4 * cos_theta_k * cos_theta_l * TMath::Cos(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
-					f_5 = -2 * cos_theta_k * TMath::Cos(phi_kst_mumu)* TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
-					f_7 = 2 * cos_theta_k * TMath::Sin(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
-					f_8 = -4 * cos_theta_k * cos_theta_l * TMath::Sin(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
-					f_9 = -(1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l) * TMath::Sin(2 * phi_kst_mumu);
-
-					f1se.setVal(f_1s);
-					double efff1s = effWf1s->getValV();
-					m6se.setVal(M_6s);
-					double effm6s = effWm6s->getValV();
-					m6ce.setVal(M_6c);
-					double effm6c = effWm6c->getValV();
-					f3e.setVal(f_3);
-					double efff3 = effWf3->getValV();
-					f4e.setVal(f_4);
-					double efff4 = effWf4->getValV();
-					f5e.setVal(f_5);
-					double efff5 = effWf5->getValV();
-					f7e.setVal(f_7);
-					double efff7 = effWf7->getValV();
-					f8e.setVal(f_8);
-					double efff8 = effWf8->getValV();
-					f9e.setVal(f_9);
-					double efff9 = effWf9->getValV();
-					if (efff1s ==0)                                                                                                       
-						wightf1s = 0;
-					else
-						wightf1s = 1/efff1s;
-					if (effm6s ==0)
-						wightm6s = 0;
-					else 
-						wightm6s = 1/effm6s;
-					if (effm6c ==0)
-						wightm6c = 0;
-					else 
-						wightm6c = 1/effm6c;
-					if (efff3 ==0)
-						wightf3 = 0;
-					else 
-						wightf3 = 1/efff3;
-					if (efff4 ==0)
-						wightf4 = 0;
-					else        
-						wightf4 = 1/efff4;
-					if (efff5 ==0)
-						wightf5 = 0;
-					else        
-						wightf5 = 1/efff5;
-					if (efff7 ==0)
-						wightf7 = 0;
-					else        
-						wightf7 = 1/efff7;
-					if (efff8 ==0)
-						wightf8 = 0;
-					else        
-						wightf8 = 1/efff8;
-					if (efff9 ==0)
-						wightf9 = 0;
-					else        
-						wightf9 = 1/efff9;
-
-					f1s->Fill(f_1s, wightf1s);
-					m6s->Fill(M_6s, wightm6s);
-					m6c->Fill(M_6c, wightm6c);
-					f3->Fill(f_3, wightf3); 
-					f4->Fill(f_4, wightf4);
-					f5->Fill(f_5, wightf5);
-					f7->Fill(f_7, wightf7);
-					f8->Fill(f_8, wightf8);
-					f9->Fill(f_9, wightf9);
-
-					entries2 = entries2+1;
-				}
-				else
-					continue;
-			}       
-			if (TagType == "mix"){
-				if ((mumuMass2>q2Min) && (mumuMass2<q2Max) && (eventN%2==parity)){
-					f_1s = 1 - cos_theta_k * cos_theta_k;
-					M_6s = (1 - cos_theta_k * cos_theta_k) * cos_theta_l;
-					M_6c = cos_theta_k * cos_theta_k * cos_theta_l;
-					f_3 = (1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l) * TMath::Cos(2 * phi_kst_mumu);
-					f_4 = 4 * cos_theta_k * cos_theta_l * TMath::Cos(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
-					f_5 = 2 * cos_theta_k * TMath::Cos(phi_kst_mumu)* TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
-					f_7 = 2 * cos_theta_k * TMath::Sin(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
-					f_8 = 4 * cos_theta_k * cos_theta_l * TMath::Sin(phi_kst_mumu) * TMath::Sqrt((1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l));
-					f_9 = (1 - cos_theta_k * cos_theta_k) * (1 - cos_theta_l * cos_theta_l) * TMath::Sin(2 * phi_kst_mumu);	
-
-					f1se.setVal(f_1s);
-					double effc1f1s = effCf1s->getValV();
-					double effw1f1s = effWf1s->getValV();
-					m6se.setVal(M_6s);
-					double effc1m6s = effCm6s->getValV();
-					double effw1m6s = effWm6s->getValV();
-					m6ce.setVal(M_6c);
-					double effc1m6c = effCm6c->getValV();
-					double effw1m6c = effWm6c->getValV();
-					f3e.setVal(f_3);
-					double effc1f3 = effCf3->getValV();
-					double effw1f3 = effWf3->getValV();
-					f4e.setVal(f_4);
-					double effc1f4 = effCf4->getValV();
-					double effw1f4 = effWf4->getValV();
-					f5e.setVal(f_5);
-					double effc1f5 = effCf5->getValV();
-					double effw1f5 = effWf5->getValV();
-					f7e.setVal(f_7);
-					double effc1f7 = effCf7->getValV();
-					double effw1f7 = effWf7->getValV();
-					f8e.setVal(f_8);
-					double effc1f8 = effCf8->getValV();
-					double effw1f8 = effWf8->getValV();
-					f9e.setVal(f_9);
-					double effc1f9 = effCf9->getValV();
-					double effw1f9 = effWf9->getValV();
-
-					m6se.setVal(-M_6s);
-					double effc2m6s = effCm6s->getValV();
-					double effw2m6s = effWm6s->getValV();
-					m6ce.setVal(-M_6c);
-					double effc2m6c = effCm6c->getValV();
-					double effw2m6c = effWm6c->getValV();
-					f5e.setVal(-f_5);
-					double effc2f5 = effCf5->getValV();
-					double effw2f5 = effWf5->getValV();
-					f8e.setVal(-f_8);
-					double effc2f8 = effCf8->getValV();
-					double effw2f8 = effWf8->getValV();
-					f9e.setVal(-f_9);
-					double effc2f9 = effCf9->getValV();
-					double effw2f9 = effWf9->getValV();
+                double denom6s = effc1m6s*effc2m6s-effw1m6s*effw2m6s;
+                if (denom6s==0){
+                    wight1m6s=0;
+                    wight2m6s=0;
+                }
+                else{
+                    wight1m6s = effc2m6s/denom6s;
+                    wight2m6s = -effw1m6s/denom6s;
+                }
+                double denom6c = effc1m6c*effc2m6c-effw1m6c*effw2m6c;
+                if (denom6c==0){
+                    wight1m6c=0;
+                    wight2m6c=0;
+                }
+                else{
+                    wight1m6c = effc2m6c/denom6c;
+                    wight2m6c = -effw1m6c/denom6c;
+                }
 
 
-					double efff1s = effc1f1s+effw1f1s;
-					double efff3 = effc1f3+effw1f3;
-					double efff4 = effc1f4+effw1f4;
-					double efff7 = effc1f7+effw1f7;
-					if (efff1s ==0)
-						wightf1s = 0;
-					else
-						wightf1s = 1/efff1s;
-					if (efff3 ==0)
-						wightf3 = 0;
-					else 
-						wightf3 = 1/efff3;
-					if (efff4 ==0)
-						wightf4 = 0;
-					else    
-						wightf4 = 1/efff4;
-					if (efff7 ==0)
-						wightf7 = 0;
-					else    
-						wightf7 = 1/efff7;
+                double denof5 = effc1f5*effc2f5-effw1f5*effw2f5;
+                if (denof5==0){
+                    wight1f5=0;
+                    wight2f5=0;
+                }
+                else{
+                    wight1f5 = effc2f5/denof5;
+                    wight2f5 = -effw1f5/denof5;
+                }
 
-					double denom6s = effc1m6s*effc2m6s-effw1m6s*effw2m6s;
-					if (denom6s==0){
-						wight1m6s=0;
-						wight2m6s=0;
-					}
-					else{
-						wight1m6s = effc2m6s/denom6s;
-						wight2m6s = -effw1m6s/denom6s;
-					}
-					double denom6c = effc1m6c*effc2m6c-effw1m6c*effw2m6c;
-					if (denom6c==0){
-						wight1m6c=0;
-						wight2m6c=0;
-					}
-					else{
-						wight1m6c = effc2m6c/denom6c;
-						wight2m6c = -effw1m6c/denom6c;
-					}
+                double denof8 = effc1f8*effc2f8-effw1f8*effw2f8;
+                if (denof8==0){
+                    wight1f8=0;
+                    wight2f8=0;
+                }
+                else{
+                    wight1f8 = effc2f8/denof8;
+                    wight2f8 = -effw1f8/denof8;
+                }
+                double denof9 = effc1f9*effc2f9-effw1f9*effw2f9;
+                if (denof9==0){
+                    wight1f9=0;
+                    wight2f9=0;
+                }
+                else{
+                    wight1f9 = effc2f9/denof9;
+                    wight2f9 = -effw1f9/denof9;
+                }
+                f1s->Fill(f_1s, wightf1s*weight);
+                f3->Fill(f_3, wightf3*weight);
+                f4->Fill(f_4, wightf4*weight);
+                f7->Fill(f_7, wightf7*weight);
 
+                m6s->Fill(M_6s, wight1m6s*weight);
+                m6s->Fill(-M_6s,wight2m6s*weight);
+                m6c->Fill(M_6c, wight1m6c*weight);
+                m6c->Fill(-M_6c,wight2m6c*weight);
+                f5->Fill(f_5, wight1f5*weight);
+                f5->Fill(-f_5,wight2f5*weight);
+                f8->Fill(f_8, wight1f8*weight);
+                f8->Fill(-f_8,wight2f8*weight);
+                f9->Fill(f_9, wight1f9*weight);
+                f9->Fill(-f_9,wight2f9*weight);
+            }
+        }
+    }
 
-					double denof5 = effc1f5*effc2f5-effw1f5*effw2f5;
-					if (denof5==0){
-						wight1f5=0;
-						wight2f5=0;
-					}
-					else{
-						wight1f5 = effc2f5/denof5;
-						wight2f5 = -effw1f5/denof5;
-					}
-
-					double denof8 = effc1f8*effc2f8-effw1f8*effw2f8;
-					if (denof8==0){
-						wight1f8=0;
-						wight2f8=0;
-					}
-					else{
-						wight1f8 = effc2f8/denof8;
-						wight2f8 = -effw1f8/denof8;
-					}
-					double denof9 = effc1f9*effc2f9-effw1f9*effw2f9;
-					if (denof9==0){
-						wight1f9=0;
-						wight2f9=0;
-					}
-					else{
-						wight1f9 = effc2f9/denof9;
-						wight2f9 = -effw1f9/denof9;
-					}
-					f1s->Fill(f_1s, wightf1s);
-					f3->Fill(f_3, wightf3);
-					f4->Fill(f_4, wightf4);
-					f7->Fill(f_7, wightf7);
-
-					m6s->Fill(M_6s, wight1m6s);
-					m6s->Fill(-M_6s,wight2m6s);
-					m6c->Fill(M_6c, wight1m6c);
-					m6c->Fill(-M_6c,wight2m6c);
-					f5->Fill(f_5, wight1f5);
-					f5->Fill(-f_5,wight2f5);
-					f8->Fill(f_8, wight1f8);
-					f8->Fill(-f_8,wight2f8);
-					f9->Fill(f_9, wight1f9);
-					f9->Fill(-f_9,wight2f9);
-				}
-				else
-					continue;
-			}
-
-
-		}
-
-
-
-	}
-
-
-	cout << "total entries is "<< totentries << endl;
-	cout << "correctly-tagged events is " << entries1 << endl;
-	cout << "wrongly-tagged events is " << entries2 << endl;
-	string paralist[15] = {"FlS", "AFBS", "S3S", "S4S", "S5S", "S7S", "S8S", "S9S", "P1S", "P2S", "P3S", "P4pS", "P5pS", "P6pS", "P8pS"};
-	for (int i =0;i<15;i++){
+    for (int i =0;i<15;i++){
 		string Paratype = paralist[i];
 		CalValue(Paratype,f1s,m6s,m6c,f3,f4,f5,f7,f8,f9);
 	}
-
 }
 
 int main(int argc, char **argv) {
@@ -1037,4 +1019,18 @@ int main(int argc, char **argv) {
 	}
 	return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
